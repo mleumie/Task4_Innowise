@@ -5,11 +5,14 @@
     <title>JSP - Hello World</title>
 </head>
 <body>
-<h1> "Hello World!"
-</h1>
+
 <br/>
 <form action="controller">
-    <input type="text" name="num" value="1"/>
+    <input type="hidden" name="command" value="login"/>
+    Login: <input type="text" name="login" value=""/>
+    <br/>
+    Password: <input type="password" name="pass" value=""/>
+    <br/>
     <input type="submit" name="sub" value="Push"/>
 </form>
 </body>

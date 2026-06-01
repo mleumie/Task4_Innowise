@@ -1,4 +1,4 @@
-package org.example.task4_innowise;
+package org.laptanovich.webproject.controller;
 
 import java.io.*;
 
@@ -16,9 +16,11 @@ public class Controller extends HttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         response.setContentType("text/html");
-        String strNum = request.getParameter("num");
-        int resNum = 2 * Integer.parseInt(strNum);
-        request.setAttribute("result", resNum);
+//        String strNum = request.getParameter("num");
+//        int resNum = 2 * Integer.parseInt(strNum);
+//        request.setAttribute("result", resNum);
+        String commandStr = request.getParameter("command");
+
         request.getRequestDispatcher("pages/main.jsp").forward(request, response);
     }
 
