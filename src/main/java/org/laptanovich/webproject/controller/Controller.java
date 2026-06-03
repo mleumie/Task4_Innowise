@@ -5,13 +5,13 @@ import java.io.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
+import org.laptanovich.webproject.command.Command;
+import org.laptanovich.webproject.command.CommandType;
 
-@WebServlet(name = "helloServlet", urlPatterns = "/controller")
+@WebServlet(name = "helloServlet", urlPatterns = {"/controller", "*.do"})
 public class Controller extends HttpServlet {
 
-
     public void init() {
-
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -20,8 +20,9 @@ public class Controller extends HttpServlet {
 //        int resNum = 2 * Integer.parseInt(strNum);
 //        request.setAttribute("result", resNum);
         String commandStr = request.getParameter("command");
-
-        request.getRequestDispatcher("pages/main.jsp").forward(request, response);
+        Command command = CommandType.define(commandStr);
+        String page = command.execute(request);
+        request.getRequestDispatcher(page).forward(request, response);
     }
 
     @Override
