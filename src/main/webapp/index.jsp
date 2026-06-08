@@ -11,7 +11,7 @@
     <input type="hidden" name="command" value="login"/>
     Login: <input type="text" name="login" value=""/>
     <br/>
-    Password: <input type="password" name="pass" value=""/>
+    Password: <input type="password" name="password" value=""/>
     <br/>
     <input type="submit" name="sub" value="Push"/>
     <br/>

@@ -3,11 +3,20 @@ package org.laptanovich.webproject.dao.impl;
 import org.laptanovich.webproject.dao.BaseDao;
 import org.laptanovich.webproject.dao.UserDao;
 import org.laptanovich.webproject.entity.User;
+import org.laptanovich.webproject.exception.DaoException;
+import org.laptanovich.webproject.pool.ConnectionPool;
 import java.sql.*;
 import java.util.List;
-import java.util.Properties;
 
 public class UserDaoImpl extends BaseDao<User> implements UserDao {
+    private static UserDaoImpl instance = new UserDaoImpl();
+
+    private UserDaoImpl() {}
+
+    public static UserDaoImpl getInstance() {
+        return instance;
+    }
+
     @Override
     public boolean insert(User user) {
         return false;
@@ -29,27 +38,22 @@ public class UserDaoImpl extends BaseDao<User> implements UserDao {
     }
 
     @Override
-    public boolean authenticate(String login, String password) {
-        try {
-            DriverManager.registerDriver(new org.postgresql.Driver());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        String url = "jdbc:postgresql://localhost:5432/testphones";
-        Properties prop = new Properties();
-        prop.put("user", "postgres");
-        prop.put("password", "1303");
+    public boolean authenticate(String login, String password) throws DaoException {
 
-        try (Connection connection = DriverManager.getConnection(url, prop);
+
+        try (Connection connection = ConnectionPool.getInstance().getConnection();
              Statement statement = connection.createStatement()) {
-            String sql = "SELECT idphonebook, lastname, phone FROM phonebook";
-            ResultSet resultSet = statement.executeQuery(sql);
-            while (resultSet.next()) {
 
-                return false;
-            }
+            //@Language("SQL")
+            //String sql = "SELECT idphonebook, lastname, phone FROM phonebook";
+            //ResultSet resultSet = statement.executeQuery(sql);
+            //while (resultSet.next()) {
+
+            //    return false;
+            //}
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DaoException(e);
         }
+        return false;
     }
 }

@@ -1,8 +1,8 @@
 package org.laptanovich.webproject.command;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.laptanovich.webproject.exception.CommandException;
 
 public interface Command {
-    String execute(HttpServletRequest request);
-    default void refresh(){};
+    Router execute(HttpServletRequest request) throws CommandException;
 }
