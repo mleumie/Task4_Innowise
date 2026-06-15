@@ -23,6 +23,8 @@
 </form>
 
 <br/>
+<a href="controller?command=sign_up">Create new account</a>
+<br/>
 <a href="index.jsp">main page</a>
 </body>
 </html>

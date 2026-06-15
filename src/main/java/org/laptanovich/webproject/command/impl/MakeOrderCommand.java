@@ -14,11 +14,11 @@ public class MakeOrderCommand implements Command {
     @Override
     public Router execute(HttpServletRequest request) throws CommandException {
         HttpSession session = request.getSession();
-        String login = (String) session.getAttribute("user_name");
+        int userId = (int) session.getAttribute("user_id");
         int itemId = Integer.parseInt(request.getParameter("item_id"));
         OrderService orderService = OrderServiceImpl.getInstance();
         try {
-            orderService.makeOrder(login, itemId);
+            orderService.makeOrder(userId, itemId);
             return new Router("/controller?command=view_items", Router.Type.REDIRECT);
         } catch (ServiceException e) {
             throw new CommandException("Failed to make order", e);

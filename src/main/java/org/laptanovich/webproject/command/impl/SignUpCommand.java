@@ -18,13 +18,15 @@ public class SignUpCommand implements Command {
         try {
             boolean registered = userService.register(login, password);
             if (registered) {
-                request.setAttribute("signup_msg", "registration successful");
+                request.setAttribute("errorMessage", "Registration successful! Please log in.");
                 return new Router("/WEB-INF/pages/login.jsp", Router.Type.FORWARD);
+            } else {
+                request.setAttribute("errorMessage", "User already exists");
+                return new Router("/WEB-INF/pages/signup.jsp", Router.Type.FORWARD);
             }
-            request.setAttribute("signup_msg", "user already exists");
-            return new Router("/WEB-INF/pages/signup.jsp", Router.Type.FORWARD);
         } catch (ServiceException e) {
-            throw new CommandException(e);
+            request.setAttribute("errorMessage", "Error: " + e.getMessage());
+            return new Router("/WEB-INF/pages/signup.jsp", Router.Type.FORWARD);
         }
     }
 }

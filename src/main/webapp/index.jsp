@@ -6,8 +6,10 @@
 </head>
 <body>
 
+<h1>Welcome</h1>
+
 <br/>
-<form action="controller">
+<form action="controller" method="POST">
     <input type="hidden" name="command" value="login"/>
     Login: <input type="text" name="login" value=""/>
     <br/>
@@ -15,7 +17,11 @@
     <br/>
     <input type="submit" name="sub" value="Push"/>
     <br/>
-    ${login_msg};
+    ${errorMessage}
 </form>
+
+<br/>
+<a href="controller?command=sign_up">Sign Up</a>
+
 </body>
 </html>

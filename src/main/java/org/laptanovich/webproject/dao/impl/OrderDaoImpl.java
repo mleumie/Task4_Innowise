@@ -37,7 +37,16 @@ public class OrderDaoImpl extends BaseDao<Order> implements OrderDao {
              PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL);
              ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                orders.add(mapRow(resultSet));
+                Order order = new Order();
+                order.setId(resultSet.getInt("id"));
+                order.setStatus(resultSet.getString("status"));
+                User user = new User();
+                user.setId(resultSet.getInt("user_id"));
+                order.setUser(user);
+                Item item = new Item();
+                item.setId(resultSet.getInt("item_id"));
+                order.setItem(item);
+                orders.add(order);
             }
         } catch (SQLException e) {
             logger.error("Failed to find all orders", e);
@@ -93,18 +102,5 @@ public class OrderDaoImpl extends BaseDao<Order> implements OrderDao {
     @Override
     public boolean delete(Order order) throws DaoException {
         throw new UnsupportedOperationException("Delete by entity is not supported");
-    }
-
-    private Order mapRow(ResultSet resultSet) throws SQLException {
-        Order order = new Order();
-        order.setId(resultSet.getInt("id"));
-        order.setStatus(resultSet.getString("status"));
-        User user = new User();
-        user.setId(resultSet.getInt("user_id"));
-        order.setUser(user);
-        Item item = new Item();
-        item.setId(resultSet.getInt("item_id"));
-        order.setItem(item);
-        return order;
     }
 }

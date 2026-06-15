@@ -2,7 +2,6 @@ package org.laptanovich.webproject.service.impl;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.laptanovich.webproject.dao.ItemDao;
 import org.laptanovich.webproject.dao.impl.ItemDaoImpl;
 import org.laptanovich.webproject.entity.Item;
 import org.laptanovich.webproject.exception.DaoException;
@@ -13,8 +12,8 @@ import java.util.List;
 
 public class ItemServiceImpl implements ItemService {
     private static final Logger logger = LogManager.getLogger();
-    private static ItemServiceImpl instance;
-    private final ItemDao itemDao = ItemDaoImpl.getInstance();
+    private static final ItemServiceImpl instance = new ItemServiceImpl();
+    private final ItemDaoImpl itemDao = ItemDaoImpl.getInstance();
 
     private ItemServiceImpl() {}
     
@@ -27,16 +26,28 @@ public class ItemServiceImpl implements ItemService {
         try {
             return itemDao.findAll();
         } catch (DaoException e) {
-            throw new ServiceException("Failed to load items", e);
+            logger.error("Error finding all items", e);
+            throw new ServiceException("Error finding all items", e);
         }
     }
 
     @Override
     public boolean delete(int itemId) throws ServiceException {
         try {
-            return itemDao.delete(itemId);
+            return itemDao.deleteById(itemId);
         } catch (DaoException e) {
-            throw new ServiceException("Cannot delete item", e);
+            logger.error("Error deleting item", e);
+            throw new ServiceException("Error deleting item", e);
+        }
+    }
+
+    @Override
+    public boolean insert(Item item) throws ServiceException {
+        try {
+            return itemDao.insert(item);
+        } catch (DaoException e) {
+            logger.error("Error inserting item", e);
+            throw new ServiceException("Error inserting item", e);
         }
     }
 
@@ -51,7 +62,8 @@ public class ItemServiceImpl implements ItemService {
         try {
             return itemDao.update(item);
         } catch (DaoException e) {
-            throw new ServiceException("Cannot update item", e);
+            logger.error("Error updating item", e);
+            throw new ServiceException("Error updating item", e);
         }
     }
 }

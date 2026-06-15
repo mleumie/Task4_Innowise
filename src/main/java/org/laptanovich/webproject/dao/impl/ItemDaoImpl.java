@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ItemDaoImpl extends BaseDao<Item> implements ItemDao {
     private static final Logger logger = LogManager.getLogger();
@@ -76,11 +77,6 @@ public class ItemDaoImpl extends BaseDao<Item> implements ItemDao {
     }
 
     @Override
-    public boolean delete(Item item) throws DaoException {
-        throw new UnsupportedOperationException("Use deleteById(int) instead of delete(Item)");
-    }
-
-    @Override
     public Item update(Item item) throws DaoException {
         try (Connection connection = ConnectionPool.getInstance().getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_ITEM)) {
@@ -96,5 +92,32 @@ public class ItemDaoImpl extends BaseDao<Item> implements ItemDao {
             throw new DaoException("Database error during item update", e);
         }
         return null;
+    }
+
+    @Override
+    public Optional<Item> findById(long id) throws DaoException {
+        try (Connection connection = ConnectionPool.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT id, name, price, description FROM items WHERE id = ?")) {
+            statement.setLong(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    Item item = new Item();
+                    item.setId(resultSet.getInt("id"));
+                    item.setName(resultSet.getString("name"));
+                    item.setPrice(resultSet.getBigDecimal("price"));
+                    item.setDescription(resultSet.getString("description"));
+                    return Optional.of(item);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding item by id", e);
+            throw new DaoException("Database error finding item by id", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean delete(Item item) throws DaoException {
+        throw new UnsupportedOperationException("Delete is not supported for Item");
     }
 }

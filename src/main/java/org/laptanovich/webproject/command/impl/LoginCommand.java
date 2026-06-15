@@ -19,12 +19,15 @@ public class LoginCommand implements Command {
             if (userService.authenticate(login, password)) {
                 HttpSession session = request.getSession();
                 session.setAttribute("user_name", login);
+                int userId = userService.getUserIdByLogin(login);
+                session.setAttribute("user_id", userId);
                 return new Router("/controller?command=view_items", Router.Type.REDIRECT);
             }
-            request.setAttribute("login_msg", "incorrect login or pass");
+            request.setAttribute("errorMessage", "incorrect login or pass");
             return new Router("/WEB-INF/pages/login.jsp", Router.Type.FORWARD);
         } catch (ServiceException e) {
-            throw new CommandException(e);
+            request.setAttribute("errorMessage", e.getMessage());
+            return new Router("/WEB-INF/pages/login.jsp", Router.Type.FORWARD);
         }
     }
 }
