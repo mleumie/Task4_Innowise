@@ -1,6 +1,7 @@
 package org.laptanovich.webproject.service.impl;
 
 import org.laptanovich.webproject.dao.ItemDao;
+import org.laptanovich.webproject.dao.impl.ItemDaoImpl;
 import org.laptanovich.webproject.entity.Item;
 import org.laptanovich.webproject.exception.DaoException;
 import org.laptanovich.webproject.exception.ServiceException;

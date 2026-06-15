@@ -11,22 +11,20 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
-public class ConnectionPool {
+public enum ConnectionPool {
+    instance;
     private static final Logger logger = LogManager.getLogger();
     private static final String DB_PROPERTIES = "database.properties";
-    private static ConnectionPool instance;
-    private static final Lock lock = new ReentrantLock();
     private final BlockingDeque<Connection> freeConnections;
     private final BlockingDeque<Connection> usedConnections;
 
-    private ConnectionPool() {
+    ConnectionPool() {
+        Logger logger = LogManager.getLogger();
         Properties properties = new Properties();
-        try (InputStream inputStream = ConnectionPool.class.getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(DB_PROPERTIES)) {
             if (inputStream == null) {
-                logger.error("Database properties file not found: " + DB_PROPERTIES);
+                logger.error("Database properties file not found: {}", DB_PROPERTIES);
                 throw new ExceptionInInitializerError("Database properties file not found: " + DB_PROPERTIES);
             }
             properties.load(inputStream);
@@ -35,12 +33,7 @@ public class ConnectionPool {
             String user = properties.getProperty("db.user");
             String password = properties.getProperty("db.password");
             int poolSize = Integer.parseInt(properties.getProperty("db.poolsize", "8"));
-            try {
-                Class.forName(driver);
-            } catch (ClassNotFoundException e) {
-                logger.error("Database driver not found: " + driver, e);
-                throw new ExceptionInInitializerError(e);
-            }
+            Class.forName(driver);
             freeConnections = new LinkedBlockingDeque<>(poolSize);
             usedConnections = new LinkedBlockingDeque<>(poolSize);
             for (int i = 0; i < poolSize; i++) {
@@ -55,15 +48,7 @@ public class ConnectionPool {
     }
 
     public static ConnectionPool getInstance() {
-        lock.lock();
-        try {
-            if (instance == null) {
-                instance = new ConnectionPool();
-            }
-            return instance;
-        } finally {
-            lock.unlock();
-        }
+        return instance;
     }
 
     public Connection getConnection() {
@@ -79,12 +64,13 @@ public class ConnectionPool {
     }
 
     public void releaseConnection(Connection connection) {
-        try {
-            usedConnections.remove(connection);
-            freeConnections.put(connection);
-        } catch (InterruptedException e) {
-            logger.error("Thread interrupted while releasing connection", e);
-            Thread.currentThread().interrupt();
+        if (usedConnections.remove(connection)) {
+            try {
+                freeConnections.put(connection);
+            } catch (InterruptedException e) {
+                logger.error("Thread interrupted while releasing connection", e);
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -102,21 +88,25 @@ public class ConnectionPool {
     }
 
     public void destroyPool() {
-        for (int i = 0; i < 8; i++) {
-            try {
-                Connection connection = freeConnections.take();
-                connection.close();
-            } catch (SQLException | InterruptedException e) {
-                logger.error("Error closing connection", e);
+        while (!freeConnections.isEmpty()) {
+            Connection connection = freeConnections.poll();
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    logger.error("Error closing connection", e);
+                }
             }
         }
-        for (Connection connection : usedConnections) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                logger.error("Error closing used connection", e);
+        while (!usedConnections.isEmpty()) {
+            Connection connection = usedConnections.poll();
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    logger.error("Error closing used connection", e);
+                }
             }
         }
-        deregisterDrivers();
     }
 }

@@ -1,15 +1,22 @@
 package org.laptanovich.webproject.dao.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.laptanovich.webproject.dao.BaseDao;
 import org.laptanovich.webproject.dao.UserDao;
 import org.laptanovich.webproject.entity.User;
 import org.laptanovich.webproject.exception.DaoException;
 import org.laptanovich.webproject.pool.ConnectionPool;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoImpl extends BaseDao<User> implements UserDao {
-    private static UserDaoImpl instance = new UserDaoImpl();
+    private static final Logger logger = LogManager.getLogger();
+    private static final UserDaoImpl instance = new UserDaoImpl();
+    private static final String SQL_AUTHENTICATE = "SELECT id, login, role FROM users WHERE login = ? AND password = ?";
+    private static final String SQL_INSERT_USER = "INSERT INTO users (login, password, role) VALUES (?, ?, ?)";
+    private static final String SQL_SELECT_ALL_USERS = "SELECT id, login, role FROM users";
 
     private UserDaoImpl() {}
 
@@ -18,42 +25,61 @@ public class UserDaoImpl extends BaseDao<User> implements UserDao {
     }
 
     @Override
-    public boolean insert(User user) {
-        return false;
-    }
-
-    @Override
-    public boolean delete(User user) {
-        return false;
-    }
-
-    @Override
-    public List<User> findAll() {
-        return List.of();
-    }
-
-    @Override
-    public User update(User user) {
-        return null;
-    }
-
-    @Override
     public boolean authenticate(String login, String password) throws DaoException {
-
-
         try (Connection connection = ConnectionPool.getInstance().getConnection();
-             Statement statement = connection.createStatement()) {
-
-            //@Language("SQL")
-            //String sql = "SELECT idphonebook, lastname, phone FROM phonebook";
-            //ResultSet resultSet = statement.executeQuery(sql);
-            //while (resultSet.next()) {
-
-            //    return false;
-            //}
+             PreparedStatement statement = connection.prepareStatement(SQL_AUTHENTICATE)) {
+            statement.setString(1, login);
+            statement.setString(2, password);
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.next();
         } catch (SQLException e) {
-            throw new DaoException(e);
+            logger.error("Error during authentication for user: {}", login, e);
+            throw new DaoException("Database error during user authentication", e);
         }
-        return false;
+    }
+
+    @Override
+    public boolean insert(User user) throws DaoException {
+        try (Connection connection = ConnectionPool.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_INSERT_USER)) {
+            statement.setString(1, user.getLogin());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getRole());
+            int rowsAffected = statement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            logger.error("Error inserting user: {}", user.getLogin(), e);
+            throw new DaoException("Database error during user insertion", e);
+        }
+    }
+
+    @Override
+    public List<User> findAll() throws DaoException {
+        List<User> users = new ArrayList<>();
+        try (Connection connection = ConnectionPool.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQL_SELECT_ALL_USERS)) {
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                User user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setLogin(resultSet.getString("login"));
+                user.setRole(resultSet.getString("role"));
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding all users", e);
+            throw new DaoException("Database error during find all users", e);
+        }
+        return users;
+    }
+
+    @Override
+    public boolean delete(User user) throws DaoException {
+        throw new UnsupportedOperationException("Delete operation not supported for User");
+    }
+
+    @Override
+    public User update(User user) throws DaoException {
+        throw new UnsupportedOperationException("Update operation not supported for User");
     }
 }
