@@ -4,11 +4,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.laptanovich.webproject.dao.BaseDao;
 import org.laptanovich.webproject.dao.OrderDao;
-import org.laptanovich.webproject.dao.UserDao;
+import org.laptanovich.webproject.entity.Item;
 import org.laptanovich.webproject.entity.Order;
+import org.laptanovich.webproject.entity.User;
 import org.laptanovich.webproject.exception.DaoException;
 import org.laptanovich.webproject.pool.ConnectionPool;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,14 +16,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrderDaoImpl extends BaseDao<Order> implements UserDao  {
+public class OrderDaoImpl extends BaseDao<Order> implements OrderDao {
     private static final Logger logger = LogManager.getLogger();
     private static final OrderDaoImpl instance = new OrderDaoImpl();
-    private static final String SQL_SELECT_ALL_ORDERS = "SELECT id, user_id, item_id, status FROM orders";
-    private static final String SQL_SELECT_ORDERS_BY_USER = "SELECT id, user_id, item_id, status FROM orders WHERE user_id = ?";
-    private static final String SQL_INSERT_ORDER = "INSERT INTO orders (user_id, item_id, status) VALUES (?, ?, ?)";
-    private static final String SQL_UPDATE_ORDER = "UPDATE orders SET status = ? WHERE id = ?";
-    private static final String SQL_DELETE_ORDER_BY_ID = "DELETE FROM orders WHERE id = ?";
+    private static final String SQL_FIND_ALL = "SELECT id, user_id, item_id, status FROM orders";
+    private static final String SQL_CREATE = "INSERT INTO orders (user_id, item_id, status) VALUES (?, ?, ?)";
+    private static final String SQL_UPDATE = "UPDATE orders SET user_id = ?, item_id = ?, status = ? WHERE id = ?";
+    private static final String SQL_DELETE = "DELETE FROM orders WHERE id = ?";
 
     private OrderDaoImpl() {}
 
@@ -35,90 +34,77 @@ public class OrderDaoImpl extends BaseDao<Order> implements UserDao  {
     public List<Order> findAll() throws DaoException {
         List<Order> orders = new ArrayList<>();
         try (Connection connection = ConnectionPool.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_SELECT_ALL_ORDERS);
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL);
              ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                Order order = new Order();
-                order.setId(resultSet.getInt("id"));
-                order.setUserLogin(resultSet.getInt(""));
-                order.setItemId(resultSet.getInt("item_id"));
-                order.setStatus(resultSet.getString("status"));
-                orders.add(order);
+                orders.add(mapRow(resultSet));
             }
         } catch (SQLException e) {
-            logger.error("Error finding all orders", e);
-            throw new DaoException("Database error during find all orders", e);
-        }
+            logger.error("Failed to find all orders", e);
+            throw new DaoException("Failed to find all orders", e);
+            }
         return orders;
     }
 
     @Override
-    public boolean insert(Order order) throws DaoException {
+    public boolean insert(Order entity) throws DaoException {
         try (Connection connection = ConnectionPool.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_INSERT_ORDER)) {
-            statement.setLong(1, order.getUserId());
-            statement.setLong(2, order.getItemId());
-            statement.setString(3, order.getStatus());
+             PreparedStatement statement = connection.prepareStatement(SQL_CREATE)) {
+            statement.setInt(1, entity.getUser().getId());
+            statement.setInt(2, entity.getItem().getId());
+            statement.setString(3, entity.getStatus());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            logger.error("Error inserting order for user id: {}", order.getUserId(), e);
-            throw new DaoException("Database error during order insertion", e);
+            logger.error("Failed to create order", e);
+            throw new DaoException("Failed to create order", e);
         }
     }
 
     @Override
-    public Order update(Order order) throws DaoException {
+    public Order update(Order entity) throws DaoException {
         try (Connection connection = ConnectionPool.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE_ORDER)) {
-            statement.setString(1, order.getStatus());
-            statement.setLong(2, order.getId());
-            if (statement.executeUpdate() > 0) {
-                return order;
+             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE)) {
+            statement.setInt(1, entity.getUser().getId());
+            statement.setInt(2, entity.getItem().getId());
+            statement.setString(3, entity.getStatus());
+            statement.setInt(4, entity.getId());
+            if (statement.executeUpdate() == 0) {
+                throw new DaoException("Update failed, order not found");
             }
+            return entity;
         } catch (SQLException e) {
-            logger.error("Error updating order with id: {}", order.getId(), e);
-            throw new DaoException("Database error during order update", e);
+            logger.error("Failed to update order", e);
+            throw new DaoException("Failed to update order", e);
         }
     }
 
     @Override
-    public boolean deleteById(long orderId) throws DaoException {
+    public boolean deleteById(int orderId) throws DaoException {
         try (Connection connection = ConnectionPool.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_DELETE_ORDER_BY_ID)) {
-            statement.setLong(1, orderId);
+             PreparedStatement statement = connection.prepareStatement(SQL_DELETE)) {
+            statement.setInt(1, orderId);
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            logger.error("Error deleting order by id: {}", orderId, e);
-            throw new DaoException("Database error during order deletion by id", e);
+            logger.error("Failed to delete order by id: {}", orderId, e);
+            throw new DaoException("Failed to delete order", e);
         }
-    }
-
-    @Override
-    public List<Order> findOrdersByUserId(long userId) throws DaoException {
-        List<Order> orders = new ArrayList<>();
-        try (Connection connection = ConnectionPool.getInstance().getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_SELECT_ORDERS_BY_USER)) {
-            statement.setInt(1, userId);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    Order order = new Order();
-                    order.setId(resultSet.getLong("id"));
-                    order.setUserId(resultSet.getLong("user_id"));
-                    order.setItemId(resultSet.getLong("item_id"));
-                    order.setStatus(resultSet.getString("status"));
-                    orders.add(order);
-                }
-            }
-        } catch (SQLException e) {
-            logger.error("Error finding orders for user id: {}", userId, e);
-            throw new DaoException("Database error during finding orders by user", e);
-        }
-        return orders;
     }
 
     @Override
     public boolean delete(Order order) throws DaoException {
-        throw new UnsupportedOperationException("Delete by order object is not supported");
+        throw new UnsupportedOperationException("Delete by entity is not supported");
+    }
+
+    private Order mapRow(ResultSet resultSet) throws SQLException {
+        Order order = new Order();
+        order.setId(resultSet.getInt("id"));
+        order.setStatus(resultSet.getString("status"));
+        User user = new User();
+        user.setId(resultSet.getInt("user_id"));
+        order.setUser(user);
+        Item item = new Item();
+        item.setId(resultSet.getInt("item_id"));
+        order.setItem(item);
+        return order;
     }
 }
-
