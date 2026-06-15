@@ -19,12 +19,6 @@
     <label>New password:</label><br/>
     <input type="password" name="password" required/><br/><br/>
 
-    <label>Роль:</label><br/>
-    <select name="role">
-        <option value="customer">Customer</option>
-        <option value="admin">Administrator</option>
-    </select><br/><br/>
-
     <button type="submit">Sign up</button>
 </form>
 
