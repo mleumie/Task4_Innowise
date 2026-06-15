@@ -43,7 +43,7 @@ public class UserDaoImpl extends BaseDao<User> implements UserDao {
         try (Connection connection = ConnectionPool.getInstance().getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_INSERT_USER)) {
             statement.setString(1, user.getLogin());
-            statement.setString(2, user.getPassword());
+            statement.setString(2, user.getPasswordHash());
             statement.setString(3, user.getRole());
             int rowsAffected = statement.executeUpdate();
             return rowsAffected > 0;

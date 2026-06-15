@@ -1,5 +1,7 @@
 package org.laptanovich.webproject.service.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.laptanovich.webproject.dao.ItemDao;
 import org.laptanovich.webproject.dao.impl.ItemDaoImpl;
 import org.laptanovich.webproject.entity.Item;
@@ -10,12 +12,12 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class ItemServiceImpl implements ItemService {
+    private static final Logger logger = LogManager.getLogger();
     private static ItemServiceImpl instance;
     private final ItemDao itemDao = ItemDaoImpl.getInstance();
 
-    private ItemServiceImpl() {
-    }
-
+    private ItemServiceImpl() {}
+    
     public static ItemServiceImpl getInstance() {
         return instance;
     }
